@@ -1,21 +1,16 @@
 import random
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 #Calculates random yearly return from the S&P 500
-def calcStockRate():
-    #Mean Return
-    mu = .07
-    #Standard Deviation
-    sigma = .15
+def calcStockRate(mu, sigma):
     #Random value based on a gaussian dist
     stockRate = random.gauss(mu, sigma)
     return stockRate
 
 #Calculates random yearly return from the Total Bond Market
-def calcBondRate():
-    #Mean Return
-    mu = .05
-    #Standard Deviation
-    sigma = .025
+def calcBondRate(mu, sigma):
     #Random value based on a gaussian dist
     stockRate = random.gauss(mu, sigma)
     return stockRate
@@ -23,7 +18,7 @@ def calcBondRate():
 #Rebalances stock to bond ratio
 def rebalance(valueRStock, valueRBond):
     percentStock = .9
-    percentBond = .1
+    percentBond = 1.0 - percentStock
     total = valueRStock + valueRBond
     valueRStock = total * percentStock
     valueRBond = total * percentBond
@@ -36,44 +31,58 @@ def calcValue(rate, value):
 
 #Set initial conditions
 def initial():
-    valueStock = 9000
-    valueBond = 1000
-    valuePureStock = 10000
-    valueRStock = 9000
-    valueRBond = 1000
+    total = 100000
+    percentStock = .9
+    valueStock = total * percentStock
+    valueBond = total - valueStock
+    valuePureStock = total 
+    valueRStock = total * percentStock
+    valueRBond = total - valueStock
     return valueStock,valueBond, valuePureStock, valueRStock, valueRBond
 
 #Initialize
-y = 0
 yearsPerIteration = 70
 totalIterations = 10000
+meanStockRate = .07 #Average yearly stock return
+stDevStock = .15 #Standard deviation of stock return
+meanBondRate = .05 #Average yearly bond return
+stDevBond = .025 #Standard deviation of bond return
+
+y = 0
 pureStockWins = 0
 mixedPortfolioWins = 0
 rebalancedPortfolioWins = 0
 valueStock, valueBond, valuePureStock, valueRStock, valueRBond = initial()
+
+#Plot data initialize
+iX = [] #iteration on x-axis
+mixedY = [] #mixed portfolio on y-axis
+pureY = [] #pure portfolio on y-axis
+rebalY = [] #rebalanced portfolio on y-axis
 
 #Run multiple times
 while y<totalIterations:
     x = 0
 #Calculate change in fund value
     while x<yearsPerIteration:
-        stockRate = calcStockRate()
-        bondRate = calcBondRate()
+        stockRate = calcStockRate(meanStockRate, stDevStock)
+        bondRate = calcBondRate(meanBondRate, stDevBond)
         valueStock = calcValue(stockRate, valueStock)
         valueBond = calcValue(bondRate, valueBond)
         valuePureStock = calcValue(stockRate, valuePureStock)
         valueRStock = calcValue(stockRate, valueRStock)
         valueRBond = calcValue(bondRate, valueRBond)
-        #print "BEFORE Rebalanced Stock Val = ", valueRStock
-        #print "BEFORE Rebalanced Bond Val = ", valueRBond 
+        #print ("BEFORE Rebalanced Stock Val = ", valueRStock)
+        #print ("BEFORE Rebalanced Bond Val = ", valueRBond) 
+
         valueRStock, valueRBond = rebalance(valueRStock, valueRBond)
         x += 1
+        #print ("AFTER Rebalanced Stock Val = ", valueRStock)
+        #print ("AFTER Rebalanced Bond Val = ", valueRBond)
 
-        #print "AFTER Rebalanced Stock Val = ", valueRStock
-        #print "AFTER Rebalanced Bond Val = ", valueRBond
-    #print "Stock value = ", valueStock, " Bond Value = ", valueBond
-    #print "Total Mixed = ", valueStock+valueBond
-    #print "Pure Stock = ", valuePureStock
+    #print ("Stock value = ", valueStock, " Bond Value = ", valueBond)
+    #print ("Total Mixed = ", valueStock+valueBond)
+    #print ("Pure Stock = ", valuePureStock)
 
     #Compare mixed to rebalanced to pure portfolios and count
     if (valueStock + valueBond) > valuePureStock and (valueStock + valueBond) > (valueRStock + valueRBond):
@@ -82,12 +91,40 @@ while y<totalIterations:
         pureStockWins += 1
     if (valueRStock + valueRBond) > valuePureStock and (valueRStock + valueRBond) > (valueStock + valueBond):
         rebalancedPortfolioWins += 1
-    y += 1
+
+    #Append data for plotting
+    iX.append(y)
+    mixedY.append(valueStock+valueBond)
+    pureY.append(valuePureStock)
+    rebalY.append(valueRStock+valueRBond)
+    
     #Reset portfolios
     valueStock, valueBond, valuePureStock, valueRStock, valueRBond = initial()
+    y += 1
 
-print "Years per iteration: ", yearsPerIteration, "Total Iterations: ", totalIterations
-print "Mixed portfolio won: ", mixedPortfolioWins
-print "Pure stock won: ", pureStockWins
-print "Rebalanced portfolio won: ", rebalancedPortfolioWins 
-print "Percent rebalanced wins: ", float(rebalancedPortfolioWins)/float(totalIterations)*100
+#Summary
+print("Years per iteration: ", yearsPerIteration, "Total Iterations: ", totalIterations)
+print("Mean yearly stock return: ", meanStockRate, "Stock standard dev: ", stDevStock)
+print("Mean yearly bond return: ", meanBondRate, "Bond standard dev: ", stDevBond)
+print("Mixed portfolio won: ", mixedPortfolioWins)
+print("Pure stock won: ", pureStockWins)
+print("Rebalanced portfolio won: ", rebalancedPortfolioWins) 
+print("Percent rebalanced wins: ", float(rebalancedPortfolioWins)/float(totalIterations)*100)
+
+#Plot
+mixedY.sort()
+pureY.sort()
+rebalY.sort()
+plt.plot(iX, mixedY, color='red', label='Mixed Portfolio')
+plt.plot(iX, pureY, color='blue', label='Pure Stock Portfolio')
+plt.plot(iX, rebalY, color='green', label='Rebalanced Portfolio')
+##plt.scatter(iX, mixedY, color='red', label='Mixed Portfolio')
+##plt.scatter(iX, pureY, color='blue', label='Pure Stock Portfolio')
+##plt.scatter(iX, rebalY, color='green', label='Rebalanced Portfolio')
+plt.xlabel("Iteration")
+plt.ylabel("Portfolio Value")
+red_patch = mpatches.Patch(color='red', label='Mixed Portfolio')
+blue_patch = mpatches.Patch(color='blue', label='Pure Stock Portfolio')
+green_patch = mpatches.Patch(color='green', label='Rebalanced Portfolio')
+plt.legend()
+plt.show()
