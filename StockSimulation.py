@@ -3,21 +3,14 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-#Calculates random yearly return from the S&P 500
-def calcStockRate(mu, sigma):
+#Calculates random yearly return of equity
+def calcRate(mu, sigma):
     #Random value based on a gaussian dist
-    stockRate = random.gauss(mu, sigma)
-    return stockRate
-
-#Calculates random yearly return from the Total Bond Market
-def calcBondRate(mu, sigma):
-    #Random value based on a gaussian dist
-    stockRate = random.gauss(mu, sigma)
-    return stockRate
+    rate = random.gauss(mu, sigma)
+    return rate
 
 #Rebalances stock to bond ratio
-def rebalance(valueRStock, valueRBond):
-    percentStock = .9
+def rebalance(valueRStock, valueRBond, percentStock):
     percentBond = 1.0 - percentStock
     total = valueRStock + valueRBond
     valueRStock = total * percentStock
@@ -65,8 +58,8 @@ while y<totalIterations:
     x = 0
     #Calculate yearly change in fund value
     while x<yearsPerIteration:
-        stockRate = calcStockRate(meanStockRate, stDevStock)
-        bondRate = calcBondRate(meanBondRate, stDevBond)
+        stockRate = calcRate(meanStockRate, stDevStock)
+        bondRate = calcRate(meanBondRate, stDevBond)
         valueStock = calcValue(stockRate, valueStock)
         valueBond = calcValue(bondRate, valueBond)
         valuePureStock = calcValue(stockRate, valuePureStock)
@@ -74,8 +67,8 @@ while y<totalIterations:
         valueRBond = calcValue(bondRate, valueRBond)
 ##        print ("BEFORE Rebalanced Stock Val = ", valueRStock)
 ##        print ("BEFORE Rebalanced Bond Val = ", valueRBond) 
-
-        valueRStock, valueRBond = rebalance(valueRStock, valueRBond)
+        #Rebalance rebalancing portfolio
+        valueRStock, valueRBond = rebalance(valueRStock, valueRBond, percentStock)
         x += 1
 ##        print ("AFTER Rebalanced Stock Val = ", valueRStock)
 ##        print ("AFTER Rebalanced Bond Val = ", valueRBond)
